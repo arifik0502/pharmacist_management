@@ -9,33 +9,43 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // Require authentication
 requireAuth();
 
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+// Get input data - handle both JSON and form data
+$input = [];
+$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
 
-if (!$input) {
-    sendResponse(['success' => false, 'message' => 'Invalid JSON input'], 400);
+if (strpos($content_type, 'application/json') !== false) {
+    // Handle JSON input
+    $json_input = json_decode(file_get_contents('php://input'), true);
+    if ($json_input) {
+        $input = $json_input;
+    }
+} else {
+    // Handle form data
+    $input = $_POST;
 }
 
-// Required fields
+// Required fields validation
 $required_fields = ['name', 'batch_number', 'quantity', 'price', 'expiry_date'];
 foreach ($required_fields as $field) {
-    if (!isset($input[$field]) || empty(trim($input[$field]))) {
+    if (empty(trim($input[$field] ?? ''))) {
         sendResponse(['success' => false, 'message' => "Field '$field' is required"], 400);
     }
 }
 
 // Validate data types
-if (!is_numeric($input['quantity']) || $input['quantity'] < 0) {
+$quantity = filter_var($input['quantity'], FILTER_VALIDATE_INT);
+if ($quantity === false || $quantity < 0) {
     sendResponse(['success' => false, 'message' => 'Quantity must be a positive number'], 400);
 }
 
-if (!is_numeric($input['price']) || $input['price'] <= 0) {
+$price = filter_var($input['price'], FILTER_VALIDATE_FLOAT);
+if ($price === false || $price <= 0) {
     sendResponse(['success' => false, 'message' => 'Price must be a positive number'], 400);
 }
 
 // Validate expiry date
-$expiry_date = DateTime::createFromFormat('Y-m-d', $input['expiry_date']);
-if (!$expiry_date || $expiry_date->format('Y-m-d') !== $input['expiry_date']) {
+$expiry_date = DateTime::createFromFormat('Y-m-d', trim($input['expiry_date']));
+if (!$expiry_date || $expiry_date->format('Y-m-d') !== trim($input['expiry_date'])) {
     sendResponse(['success' => false, 'message' => 'Invalid expiry date format'], 400);
 }
 
@@ -44,23 +54,21 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
+    // Clean and prepare data
+    $name = trim($input['name']);
+    $batch_number = trim($input['batch_number']);
+    $cost_price = !empty($input['cost_price']) ? floatval($input['cost_price']) : null;
+    $min_stock = !empty($input['min_stock']) ? intval($input['min_stock']) : 10;
+    $expiry_date_str = trim($input['expiry_date']);
+    $supplier_id = !empty($input['supplier_id']) ? intval($input['supplier_id']) : null;
+    
     // Check if medicine with same name and batch number already exists
     $stmt = $db->prepare("SELECT id FROM medicines WHERE name = ? AND batch_number = ?");
-    $stmt->execute([trim($input['name']), trim($input['batch_number'])]);
+    $stmt->execute([$name, $batch_number]);
     
     if ($stmt->fetch()) {
         sendResponse(['success' => false, 'message' => 'Medicine with this name and batch number already exists'], 409);
     }
-    
-    // Prepare data
-    $name = trim($input['name']);
-    $batch_number = trim($input['batch_number']);
-    $quantity = intval($input['quantity']);
-    $price = floatval($input['price']);
-    $cost_price = isset($input['cost_price']) ? floatval($input['cost_price']) : null;
-    $min_stock = isset($input['min_stock']) ? intval($input['min_stock']) : 10;
-    $expiry_date = $input['expiry_date'];
-    $supplier_id = isset($input['supplier_id']) ? intval($input['supplier_id']) : null;
     
     // Insert medicine
     $stmt = $db->prepare("
@@ -75,7 +83,7 @@ try {
         $price,
         $cost_price,
         $min_stock,
-        $expiry_date,
+        $expiry_date_str,
         $supplier_id
     ]);
     

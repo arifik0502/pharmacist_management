@@ -1506,3 +1506,160 @@ window.pharmacyApp = {
     printReport,
     logout
 };
+
+// Form submission handlers
+document.addEventListener('DOMContentLoaded', function() {
+    // Add Customer Form Handler
+    const addCustomerForm = document.getElementById('addCustomerForm');
+    if (addCustomerForm) {
+        addCustomerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('customerName').value);
+            formData.append('phone', document.getElementById('customerPhone').value);
+            formData.append('email', document.getElementById('customerEmail').value);
+            formData.append('address', document.getElementById('customerAddress').value);
+            formData.append('insurance_provider', document.getElementById('insuranceProvider').value);
+            
+            fetch('api/add_customer.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Customer added successfully!');
+                    closeModal('addCustomerModal');
+                    addCustomerForm.reset();
+                    loadCustomers(); // Refresh the customer list
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the customer.');
+            });
+        });
+    }
+    
+    // Add Medicine Form Handler
+    const addMedicineForm = document.getElementById('addMedicineForm');
+    if (addMedicineForm) {
+        addMedicineForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('medicineName').value);
+            formData.append('batch_number', document.getElementById('batchNumber').value);
+            formData.append('quantity', document.getElementById('medicineQuantity').value);
+            formData.append('price', document.getElementById('medicinePrice').value);
+            formData.append('expiry_date', document.getElementById('expiryDate').value);
+            
+            fetch('api/add_medicine.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Medicine added successfully!');
+                    closeModal('addMedicineModal');
+                    addMedicineForm.reset();
+                    loadInventory(); // Refresh the inventory list
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the medicine.');
+            });
+        });
+    }
+    
+    // Add User Form Handler
+    const addUserForm = document.getElementById('addUserForm');
+    if (addUserForm) {
+        addUserForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('username', document.getElementById('newUsername').value);
+            formData.append('full_name', document.getElementById('newFullName').value);
+            formData.append('email', document.getElementById('newEmail').value);
+            formData.append('role', document.getElementById('newRole').value);
+            formData.append('password', document.getElementById('newPassword').value);
+            
+            fetch('api/add_user.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User added successfully!');
+                    closeModal('addUserModal');
+                    addUserForm.reset();
+                    loadUsers(); // Refresh the users list
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the user.');
+            });
+        });
+    }
+});
+
+// Helper functions for loading data (you'll need to implement these)
+function loadCustomers() {
+    fetch('api/customers.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the customers table with new data
+                console.log('Customers loaded:', data.customers);
+                // Add your table update logic here
+            }
+        })
+        .catch(error => console.error('Error loading customers:', error));
+}
+
+function loadInventory() {
+    fetch('api/medicines.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the inventory table with new data
+                console.log('Medicines loaded:', data.medicines);
+                // Add your table update logic here
+            }
+        })
+        .catch(error => console.error('Error loading inventory:', error));
+}
+
+function loadUsers() {
+    fetch('api/users.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the users table with new data
+                console.log('Users loaded:', data.users);
+                // Add your table update logic here
+            }
+        })
+        .catch(error => console.error('Error loading users:', error));
+}
+
+// Modal functions
+function openModal(modalId) {
+    document.getElementById(modalId).style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}

@@ -10,30 +10,49 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 requireAuth();
 requireRole(['admin']);
 
-// Get JSON input
-$input = json_decode(file_get_contents('php://input'), true);
+// Get input data - handle both JSON and form data
+$input = [];
+$content_type = $_SERVER['CONTENT_TYPE'] ?? '';
+
+if (strpos($content_type, 'application/json') !== false) {
+    // Handle JSON input
+    $json_input = json_decode(file_get_contents('php://input'), true);
+    if ($json_input) {
+        $input = $json_input;
+    }
+} else {
+    // Handle form data
+    $input = $_POST;
+}
 
 // Validate required fields
 $required_fields = ['username', 'full_name', 'email', 'role', 'password'];
 foreach ($required_fields as $field) {
-    if (!isset($input[$field]) || empty($input[$field])) {
-        sendResponse(['success' => false, 'message' => ucfirst($field) . ' is required']);
+    if (empty(trim($input[$field] ?? ''))) {
+        sendResponse(['success' => false, 'message' => ucfirst(str_replace('_', ' ', $field)) . ' is required']);
     }
 }
 
+// Clean data
+$username = trim($input['username']);
+$full_name = trim($input['full_name']);
+$email = trim($input['email']);
+$role = trim($input['role']);
+$password = trim($input['password']);
+
 // Validate email format
-if (!filter_var($input['email'], FILTER_VALIDATE_EMAIL)) {
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     sendResponse(['success' => false, 'message' => 'Invalid email format']);
 }
 
 // Validate role
 $valid_roles = ['admin', 'pharmacist', 'cashier'];
-if (!in_array($input['role'], $valid_roles)) {
+if (!in_array($role, $valid_roles)) {
     sendResponse(['success' => false, 'message' => 'Invalid role']);
 }
 
 // Validate password strength
-if (strlen($input['password']) < 6) {
+if (strlen($password) < 6) {
     sendResponse(['success' => false, 'message' => 'Password must be at least 6 characters long']);
 }
 
@@ -44,20 +63,20 @@ try {
     
     // Check if username already exists
     $stmt = $db->prepare("SELECT id FROM users WHERE username = ?");
-    $stmt->execute([$input['username']]);
+    $stmt->execute([$username]);
     if ($stmt->fetch()) {
         sendResponse(['success' => false, 'message' => 'Username already exists']);
     }
     
     // Check if email already exists
     $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
-    $stmt->execute([$input['email']]);
+    $stmt->execute([$email]);
     if ($stmt->fetch()) {
         sendResponse(['success' => false, 'message' => 'Email already exists']);
     }
     
     // Hash password
-    $hashed_password = password_hash($input['password'], PASSWORD_DEFAULT);
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     
     // Insert new user
     $stmt = $db->prepare("
@@ -66,17 +85,17 @@ try {
     ");
     
     $stmt->execute([
-        $input['username'],
-        $input['full_name'],
-        $input['email'],
-        $input['role'],
+        $username,
+        $full_name,
+        $email,
+        $role,
         $hashed_password
     ]);
     
     $user_id = $db->lastInsertId();
     
     // Log activity
-    logActivity($db, $_SESSION['user_id'], 'User Added', "User: {$input['username']} ({$input['role']})");
+    logActivity($db, $_SESSION['user_id'], 'User Added', "User: {$username} ({$role})");
     
     sendResponse([
         'success' => true,
