@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apochetary Cartel - Pharmacy Management System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <h1 class="login-title">🏥 Apochetary Cartel</h1>
+            <div class="role-selector">
+                <button class="role-btn active" onclick="selectRole('admin')">Admin</button>
+                <button class="role-btn" onclick="selectRole('pharmacist')">Pharmacist</button>
+                <button class="role-btn" onclick="selectRole('cashier')">Cashier</button>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" style="display: none;">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <div class="logo">🏥 Apochetary Cartel</div>
+                <div class="nav-links">
+                    <a href="#" class="nav-link active" onclick="showSection('dashboard')">Dashboard</a>
+                    <a href="#" class="nav-link" onclick="showSection('inventory')">Inventory</a>
+                    <a href="#" class="nav-link" onclick="showSection('sales')">Sales</a>
+                    <a href="#" class="nav-link" onclick="showSection('prescriptions')">Prescriptions</a>
+                    <a href="#" class="nav-link" onclick="showSection('customers')">Customers</a>
+                    <a href="#" class="nav-link" onclick="showSection('suppliers')">Suppliers</a>
+                    <a href="#" class="nav-link" onclick="showSection('reports')">Reports</a>
+                    <a href="#" class="nav-link" onclick="showSection('users')" id="usersLink">Users</a>
+                </div>
+                <div class="user-info">
+                    <span id="currentUser">Welcome, Admin</span>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="content-section active">
+                <div class="dashboard">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Total Sales Today</div>
+                            <div class="card-icon">💰</div>
+                        </div>
+                        <div class="stat-number" id="totalSales">$0.00</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Products in Stock</div>
+                            <div class="card-icon">📦</div>
+                        </div>
+                        <div class="stat-number" id="totalProducts">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Low Stock Items</div>
+                            <div class="card-icon">⚠️</div>
+                        </div>
+                        <div class="stat-number status-low" id="lowStockItems">0</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Prescriptions Today</div>
+                            <div class="card-icon">📋</div>
+                        </div>
+                        <div class="stat-number" id="prescriptionsToday">0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Recent Activities</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Activity</th>
+                                <th>User</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentActivities">
+                            <!-- Dynamic content will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Inventory Section -->
+            <div id="inventory" class="content-section">
+                <div class="section-title">Inventory Management</div>
+                
+                <div class="grid-2">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search medicines..." id="inventorySearch">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openModal('addMedicineModal')">Add Medicine</button>
+                        <button class="btn btn-secondary" onclick="generateReport('inventory')">Generate Report</button>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Medicine Name</th>
+                            <th>Batch/Lot</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTable">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sales Section -->
+            <div id="sales" class="content-section">
+                <div class="section-title">Sales & Billing</div>
+                
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-title">New Sale</div>
+                        <form id="saleForm">
+                            <div class="form-group">
+                                <label class="form-label">Customer</label>
+                                <select class="form-input" id="customerId">
+                                    <option value="">Select Customer</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Medicine</label>
+                                <select class="form-input" id="medicineId">
+                                    <option value="">Select Medicine</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-input" id="quantity" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Payment Method</label>
+                                <select class="form-input" id="paymentMethod">
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="insurance">Insurance</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Process Sale</button>
+                        </form>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">Sale Summary</div>
+                        <div id="saleSummary">
+                            <p>Subtotal: $<span id="subtotal">0.00</span></p>
+                            <p>Tax: $<span id="tax">0.00</span></p>
+                            <p><strong>Total: $<span id="total">0.00</span></strong></p>
+                            <button class="btn btn-secondary" onclick="printReceipt()" style="width: 100%; margin-top: 1rem;">Print Receipt</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Recent Sales</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Medicine</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTable">
+                            <!-- Dynamic content will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Prescriptions Section -->
+            <div id="prescriptions" class="content-section">
+                <div class="section-title">Prescription Management</div>
+                
+                <div class="grid-2">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search prescriptions..." id="prescriptionSearch">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openModal('addPrescriptionModal')">Add Prescription</button>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Prescription ID</th>
+                            <th>Patient</th>
+                            <th>Doctor</th>
+                            <th>Medicine</th>
+                            <th>Dosage</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prescriptionsTable">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Customers Section -->
+            <div id="customers" class="content-section">
+                <div class="section-title">Customer Management</div>
+                
+                <div class="grid-2">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search customers..." id="customerSearch">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openModal('addCustomerModal')">Add Customer</button>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Address</th>
+                            <th>Insurance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customersTable">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Suppliers Section -->
+            <div id="suppliers" class="content-section">
+                <div class="section-title">Supplier Management</div>
+                
+                <div class="grid-2">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search suppliers..." id="supplierSearch">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openModal('addSupplierModal')">Add Supplier</button>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact Person</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Products</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="suppliersTable">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Reports Section -->
+            <div id="reports" class="content-section">
+                <div class="section-title">Reports & Analytics</div>
+                
+                <div class="grid-3">
+                    <div class="card">
+                        <div class="card-title">Sales Report</div>
+                        <p>Generate daily, weekly, or monthly sales reports</p>
+                        <button class="btn btn-primary" onclick="generateReport('sales')">Generate</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Inventory Report</div>
+                        <p>View current stock levels and expiring medicines</p>
+                        <button class="btn btn-primary" onclick="generateReport('inventory')">Generate</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Financial Report</div>
+                        <p>Revenue, expenses, and profit analysis</p>
+                        <button class="btn btn-primary" onclick="generateReport('financial')">Generate</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Report Filters</div>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label class="form-label">Date From</label>
+                            <input type="date" class="form-input" id="dateFrom">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date To</label>
+                            <input type="date" class="form-input" id="dateTo">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Report Type</label>
+                            <select class="form-input" id="reportType">
+                                <option value="sales">Sales Report</option>
+                                <option value="inventory">Inventory Report</option>
+                                <option value="financial">Financial Report</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="generateCustomReport()">Generate Custom Report</button>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users" class="content-section">
+                <div class="section-title">User Management</div>
+                
+                <div class="grid-2">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" placeholder="Search users..." id="userSearch">
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" onclick="openModal('addUserModal')">Add User</button>
+                    </div>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Role</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="addMedicineModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Medicine</h3>
+                <button class="close-btn" onclick="closeModal('addMedicineModal')">&times;</button>
+            </div>
+            <form id="addMedicineForm">
+                <div class="form-group">
+                    <label class="form-label">Medicine Name</label>
+                    <input type="text" class="form-input" id="medicineName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Batch/Lot Number</label>
+                    <input type="text" class="form-input" id="batchNumber" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-input" id="medicineQuantity" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Price</label>
+                    <input type="number" step="0.01" class="form-input" id="medicinePrice" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expiry Date</label>
+                    <input type="date" class="form-input" id="expiryDate" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Medicine</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addCustomerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Customer</h3>
+                <button class="close-btn" onclick="closeModal('addCustomerModal')">&times;</button>
+            </div>
+            <form id="addCustomerForm">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" id="customerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="customerEmail">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Address</label>
+                    <textarea class="form-input" id="customerAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Insurance Provider</label>
+                    <input type="text" class="form-input" id="insuranceProvider">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Customer</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add User</h3>
+                <button class="close-btn" onclick="closeModal('addUserModal')">&times;</button>
+            </div>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="newUsername" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-input" id="newFullName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="newEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Role</label>
+                    <select class="form-input" id="newRole" required>
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="pharmacist">Pharmacist</option>
+                        <option value="cashier">Cashier</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="newPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Add User</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
