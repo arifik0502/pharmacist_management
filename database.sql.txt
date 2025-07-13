@@ -1,0 +1,169 @@
+-- Pharmacy Management System Database Schema
+-- Create database
+CREATE DATABASE IF NOT EXISTS pharmacy_management;
+USE pharmacy_management;
+
+-- Users table
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    role ENUM('admin', 'pharmacist', 'cashier') NOT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Customers table
+CREATE TABLE customers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    phone VARCHAR(15) NOT NULL,
+    email VARCHAR(100),
+    address TEXT,
+    insurance_provider VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Suppliers table
+CREATE TABLE suppliers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    contact_person VARCHAR(100),
+    phone VARCHAR(15),
+    email VARCHAR(100),
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Medicines table
+CREATE TABLE medicines (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    batch_number VARCHAR(50) NOT NULL,
+    quantity INT NOT NULL DEFAULT 0,
+    price DECIMAL(10, 2) NOT NULL,
+    cost_price DECIMAL(10, 2),
+    min_stock INT DEFAULT 10,
+    expiry_date DATE NOT NULL,
+    supplier_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
+    UNIQUE KEY unique_batch (name, batch_number)
+);
+
+-- Sales table
+CREATE TABLE sales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT,
+    user_id INT NOT NULL,
+    sale_date DATE NOT NULL,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    tax DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    total DECIMAL(10, 2) NOT NULL,
+    payment_method ENUM('cash', 'card', 'insurance') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+-- Sale items table
+CREATE TABLE sale_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sale_id INT NOT NULL,
+    medicine_id INT NOT NULL,
+    quantity INT NOT NULL,
+    unit_price DECIMAL(10, 2) NOT NULL,
+    total_price DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+    FOREIGN KEY (medicine_id) REFERENCES medicines(id) ON DELETE RESTRICT
+);
+
+-- Prescriptions table
+CREATE TABLE prescriptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    doctor_name VARCHAR(100) NOT NULL,
+    prescription_date DATE NOT NULL,
+    status ENUM('pending', 'filled', 'cancelled') DEFAULT 'pending',
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+);
+
+-- Prescription items table
+CREATE TABLE prescription_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    prescription_id INT NOT NULL,
+    medicine_name VARCHAR(100) NOT NULL,
+    dosage VARCHAR(50),
+    quantity INT NOT NULL,
+    instructions TEXT,
+    FOREIGN KEY (prescription_id) REFERENCES prescriptions(id) ON DELETE CASCADE
+);
+
+-- Activity log table
+CREATE TABLE activity_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    activity VARCHAR(255) NOT NULL,
+    details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Insert default admin user
+INSERT INTO users (username, password, full_name, email, role) VALUES
+('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator', 'admin@pharmacy.com', 'admin'),
+('pharmacist', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'John Pharmacist', 'pharmacist@pharmacy.com', 'pharmacist'),
+('cashier', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Jane Cashier', 'cashier@pharmacy.com', 'cashier');
+
+-- Insert sample customers
+INSERT INTO customers (name, phone, email, address, insurance_provider) VALUES
+('John Doe', '555-0101', 'john.doe@email.com', '123 Main St, City, State 12345', 'Blue Cross'),
+('Jane Smith', '555-0102', 'jane.smith@email.com', '456 Oak Ave, City, State 12345', 'Aetna'),
+('Bob Johnson', '555-0103', 'bob.johnson@email.com', '789 Pine Rd, City, State 12345', NULL);
+
+-- Insert sample suppliers
+INSERT INTO suppliers (name, contact_person, phone, email, address) VALUES
+('MedSupply Inc', 'Sarah Manager', '555-0201', 'sarah@medsupply.com', '100 Industrial Blvd, City, State 12345'),
+('PharmaCorp', 'Mike Sales', '555-0202', 'mike@pharmacorp.com', '200 Business Park, City, State 12345');
+
+-- Insert sample medicines
+INSERT INTO medicines (name, batch_number, quantity, price, cost_price, min_stock, expiry_date, supplier_id) VALUES
+('Aspirin 500mg', 'ASP001', 100, 5.99, 3.50, 20, '2025-12-31', 1),
+('Ibuprofen 200mg', 'IBU001', 75, 7.99, 4.50, 15, '2025-11-30', 1),
+('Acetaminophen 500mg', 'ACE001', 50, 6.99, 4.00, 10, '2025-10-31', 2),
+('Amoxicillin 500mg', 'AMX001', 30, 12.99, 8.00, 10, '2025-09-30', 2),
+('Lisinopril 10mg', 'LIS001', 25, 15.99, 10.00, 10, '2025-08-31', 1);
+
+-- Insert sample prescriptions
+INSERT INTO prescriptions (customer_id, doctor_name, prescription_date, status) VALUES
+(1, 'Dr. Smith', '2025-07-13', 'pending'),
+(2, 'Dr. Johnson', '2025-07-12', 'filled'),
+(3, 'Dr. Brown', '2025-07-11', 'pending');
+
+-- Insert sample prescription items
+INSERT INTO prescription_items (prescription_id, medicine_name, dosage, quantity, instructions) VALUES
+(1, 'Lisinopril', '10mg', 30, 'Take once daily with food'),
+(2, 'Amoxicillin', '500mg', 21, 'Take three times daily for 7 days'),
+(3, 'Ibuprofen', '200mg', 60, 'Take as needed for pain, max 4 times daily');
+
+-- Insert sample sales
+INSERT INTO sales (customer_id, user_id, sale_date, subtotal, tax, total, payment_method) VALUES
+(1, 2, '2025-07-13', 12.99, 1.04, 14.03, 'card'),
+(2, 3, '2025-07-12', 7.99, 0.64, 8.63, 'cash'),
+(3, 2, '2025-07-11', 21.98, 1.76, 23.74, 'insurance');
+
+-- Insert sample sale items
+INSERT INTO sale_items (sale_id, medicine_id, quantity, unit_price, total_price) VALUES
+(1, 4, 1, 12.99, 12.99),
+(2, 2, 1, 7.99, 7.99),
+(3, 1, 2, 5.99, 11.98),
+(3, 3, 1, 6.99, 6.99);
